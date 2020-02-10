@@ -1,0 +1,2 @@
+include ':app', ':pay', ':alipay', ':wxpay'
+rootProject.name='OnePay'
