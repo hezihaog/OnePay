@@ -15,7 +15,7 @@ public class AliPayResult {
     private String result;
     private String memo;
 
-    public AliPayResult(Map<String, String> rawResult) {
+    AliPayResult(Map<String, String> rawResult) {
         if (rawResult == null) {
             return;
         }
@@ -56,5 +56,4 @@ public class AliPayResult {
     public String getResult() {
         return result;
     }
-
 }

@@ -1,6 +1,7 @@
 package com.zh.android.onepay;
 
-import android.app.Activity;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <b>Package:</b> com.zh.android.onepay <br>
@@ -8,13 +9,44 @@ import android.app.Activity;
  * <b>@author:</b> zihe <br>
  * <b>Description:</b> 统一支付入口，内部控制具体实例进行调用 <br>
  */
-public class OnePay implements PayApi {
+public class OnePay implements UILifecycleObserver {
     /**
-     * 具体实现
+     * 支付集合
      */
-    private PayApi mPayImpl;
+    private Map<String, PayApi> mPayApis;
 
-    private OnePay() {ww
+    private OnePay() {
+        mPayApis = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    public void onUIResume() {
+        for (Map.Entry<String, PayApi> entry : mPayApis.entrySet()) {
+            PayApi api = entry.getValue();
+            if (api instanceof UILifecycleObserver) {
+                ((UILifecycleObserver)api).onUIResume();
+            }
+        }
+    }
+
+    @Override
+    public void onUIStop() {
+        for (Map.Entry<String, PayApi> entry : mPayApis.entrySet()) {
+            PayApi api = entry.getValue();
+            if (api instanceof UILifecycleObserver) {
+                ((UILifecycleObserver)api).onUIStop();
+            }
+        }
+    }
+
+    @Override
+    public void onUIDestroy() {
+        for (Map.Entry<String, PayApi> entry : mPayApis.entrySet()) {
+            PayApi api = entry.getValue();
+            if (api instanceof UILifecycleObserver) {
+                ((UILifecycleObserver)api).onUIDestroy();
+            }
+        }
     }
 
     private static final class SingleHolder {
@@ -29,16 +61,46 @@ public class OnePay implements PayApi {
     }
 
     /**
-     * 配置支付的实现，可以传入OnePayApi的具体实现类，例如支付宝、微信
-     *
-     * @param payImpl 具体实现
+     * 按名称获取支付实例
      */
-    public void setupImpl(PayApi payImpl) {
-        mPayImpl = payImpl;
+    public PayApi getPayApi(String name) {
+        return mPayApis.get(name);
     }
 
-    @Override
-    public void startPay(Activity activity, PayParams params, IPayCallback payCallback) {
-        mPayImpl.startPay(activity, params, payCallback);
+    /**
+     * 注册支付的实现，可以传入OnePayApi的具体实现类，例如支付宝、微信
+     *
+     * @param name   API唯一名称
+     * @param payApi API实现
+     */
+    public void registerPayApi(String name, PayApi payApi) {
+        mPayApis.put(name, payApi);
+    }
+
+    /**
+     * 取消注册支付实现
+     *
+     * @param payApi API实现
+     */
+    public void unregisterPayApi(PayApi payApi) {
+        String name = null;
+        for (Map.Entry<String, PayApi> entry : mPayApis.entrySet()) {
+            if (entry.getValue() == payApi) {
+                name = entry.getKey();
+                break;
+            }
+        }
+        if (name != null) {
+            mPayApis.remove(name);
+        }
+    }
+
+    /**
+     * 取消注册支付实现
+     *
+     * @param name 唯一名称
+     */
+    public void unregisterPayApi(String name) {
+        mPayApis.remove(name);
     }
 }

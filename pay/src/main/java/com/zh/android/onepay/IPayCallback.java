@@ -14,8 +14,11 @@ public interface IPayCallback {
 
     /**
      * 支付失败
+     *
+     * @param error 异常对象
+     * @param msg   异常原因
      */
-    void onPayFailture();
+    void onPayFailture(Throwable error, String msg);
 
     /**
      * 支付取消
