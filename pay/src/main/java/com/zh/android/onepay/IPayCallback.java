@@ -8,6 +8,11 @@ package com.zh.android.onepay;
  */
 public interface IPayCallback {
     /**
+     * 未暗转支付平台，支付宝未安装会使用H5方式，而微信则强制安装微信才能支付
+     */
+    void onNotInstallPaymentPlatform();
+
+    /**
      * 支付成功
      */
     void onPaySuccess();

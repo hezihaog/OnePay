@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import com.tencent.mm.opensdk.constants.Build;
 import com.tencent.mm.opensdk.modelpay.PayReq;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.tencent.mm.opensdk.openapi.WXAPIFactory;
@@ -44,6 +45,13 @@ public class WXPayHelper {
      */
     public static void wxpay(final Activity context, final String payString, final IPayCallback callback) {
         try {
+            //未安装微信
+            if (!isInstallWeChat(context)) {
+                if (callback != null) {
+                    callback.onNotInstallPaymentPlatform();
+                }
+                return;
+            }
             if (TextUtils.isEmpty(payString)) {
                 if (callback != null) {
                     String msg = "payString为空";
@@ -51,14 +59,14 @@ public class WXPayHelper {
                 }
                 return;
             }
-            PayReq req = null;
+            PayReq request;
             String errorMsg = "解析微信支付需要的参数异常";
             try {
                 JSONObject json = new JSONObject(payString);
                 String parameters = json.getString("parameters");
                 JSONObject payJson = new JSONObject(parameters);
-                req = getPayReq(payJson);
-                if (req == null) {
+                request = getPayRequest(payJson);
+                if (request == null) {
                     if (callback != null) {
                         callback.onPayFailture(new JSONException(errorMsg), errorMsg);
                     }
@@ -69,9 +77,10 @@ public class WXPayHelper {
                 if (callback != null) {
                     callback.onPayFailture(e, errorMsg);
                 }
+                return;
             }
-            WXStorage.saveWxPayId(req.appId);
-            IWXAPI iwxapi = getWxApi(context, req.appId, false, true);
+            WXStorage.saveWxPayId(request.appId);
+            IWXAPI iwxapi = getWxApi(context, request.appId, false, true);
             WXPayCallBackInstance.get().setupWXPayCallBack(context, new OnWXPayEntryaCallBack() {
                 @Override
                 public void onInitFinished() {
@@ -99,7 +108,8 @@ public class WXPayHelper {
                     }
                 }
             });
-            iwxapi.sendReq(req);
+            //调起微信支付
+            iwxapi.sendReq(request);
         } catch (Exception e) {
             e.printStackTrace();
             if (callback != null) {
@@ -109,57 +119,9 @@ public class WXPayHelper {
     }
 
     /**
-     * 获取微信支付API对象-IWXAPI
-     *
-     * @param context   context
-     * @param appid     应用id
-     * @param checksign 是否检验签名
-     * @param register  是否将应用注册到微信
-     */
-    public static IWXAPI getWxApi(Context context, String appid, boolean checksign, boolean register) {
-        IWXAPI wxApi = WXAPIFactory.createWXAPI(context, appid, checksign);
-        if (register) {
-            boolean result = wxApi.registerApp(appid);
-        }
-        return wxApi;
-    }
-
-    /**
-     * H5微信支付
-     *
-     * @param payString {
-     *                  "charge_url":"weixin:\/\/wap\/pay?prepayid=wx02180524527260eed5eb51822016753075&package=1390456132&noncestr=1533204324&sign=e0b7aef2dd55df7ba5df18277ce8be60",
-     *                  "parameters":"[]"
-     *                  }
-     * @param callback  监听
-     */
-    public void wxpayH5(final Activity activity, final String payString, final IPayCallback callback) {
-        try {
-            if (TextUtils.isEmpty(payString)) {
-                if (callback != null) {
-                    String msg = "payString为空";
-                    callback.onPayFailture(new NullPointerException(msg), msg);
-                }
-                return;
-            }
-            JSONObject json = new JSONObject(payString);
-            String url = json.getString("charge_url");
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse(url));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            activity.startActivity(intent);
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (callback != null) {
-                callback.onPayFailture(e, "调起微信H5支付失败");
-            }
-        }
-    }
-
-    /**
      * 是否安装了微信
      */
-    public static boolean isInstallWeixin(Context context) {
+    public static boolean isInstallWeChat(Context context) {
         //兼容
         try {
             if (context == null) {
@@ -178,13 +140,37 @@ public class WXPayHelper {
         return false;
     }
 
+
+    /**
+     * 获取微信支付API对象-IWXAPI
+     *
+     * @param context   context
+     * @param appId     应用id
+     * @param checkSign 是否检验签名
+     * @param register  是否将应用注册到微信
+     */
+    public static IWXAPI getWxApi(Context context, String appId, boolean checkSign, boolean register) {
+        IWXAPI wxApi = WXAPIFactory.createWXAPI(context, appId, checkSign);
+        if (register) {
+            wxApi.registerApp(appId);
+        }
+        return wxApi;
+    }
+
+    /**
+     * 判断安装的微信版本是否支持回复
+     */
+    public static boolean weChatIsSupportPay(IWXAPI iwxapi) {
+        return iwxapi.getWXAppSupportAPI() >= Build.PAY_SUPPORTED_SDK_INT;
+    }
+
     /**
      * 获取调起支付需要的参数
      *
      * @param json json
      * @return {@link PayReq}
      */
-    private static PayReq getPayReq(JSONObject json) {
+    private static PayReq getPayRequest(JSONObject json) {
         try {
             PayReq req = new PayReq();
             req.appId = json.getString("appid");

@@ -6,7 +6,7 @@ package com.zh.android.onepay.wxpay.internal;
  * <b>@author:</b> zihe <br>
  * <b>Description:</b> 微信信息存储 <br>
  */
-public class WXStorage {
+class WXStorage {
     /**
      * 微信支付AppId
      */
@@ -15,14 +15,14 @@ public class WXStorage {
     /**
      * 保存微信支付AppId
      */
-    public static void saveWxPayId(String id) {
+    static void saveWxPayId(String id) {
         SPUtils.getInstance().put(WX_PAY_APPID, id);
     }
 
     /**
      * 获取保存微信支付AppId
      */
-    public static String getWxPayAppid() {
+    static String getWxPayAppId() {
         return SPUtils.getInstance().getString(WX_PAY_APPID, "");
     }
 }

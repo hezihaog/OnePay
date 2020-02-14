@@ -11,6 +11,9 @@ import com.zh.android.onepay.IPayCallback;
 import com.zh.android.onepay.PayParams;
 import com.zh.android.onepay.sample.pay.PayManager;
 
+/**
+ * 支付例子，接入可以参考这个文章，https://www.jianshu.com/p/482e73a58f7b
+ */
 public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,6 +22,11 @@ public class MainActivity extends AppCompatActivity {
         Button callAlipay = findViewById(R.id.call_alipay);
         Button wxPay = findViewById(R.id.call_wxpay);
         final IPayCallback payCallback = new IPayCallback() {
+            @Override
+            public void onNotInstallPaymentPlatform() {
+                toast("支付失败，您未安装微信！");
+            }
+
             @Override
             public void onPaySuccess() {
                 toast("用户取消-成功");

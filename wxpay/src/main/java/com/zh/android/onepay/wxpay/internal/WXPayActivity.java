@@ -34,7 +34,7 @@ public class WXPayActivity extends Activity implements IWXAPIEventHandler {
         setTheme(android.R.style.Theme_NoDisplay);
         super.onCreate(savedInstanceState);
         mWXPayCallBack = WXPayCallBackInstance.get().getWXPayCallBack();
-        String id = WXStorage.getWxPayAppid();
+        String id = WXStorage.getWxPayAppId();
         mWXAPI = WXPayHelper.getWxApi(this, id, false, true);
         mWXAPI.handleIntent(getIntent(), this);
     }
